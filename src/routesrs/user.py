@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends
 from typing import Annotated
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from database import engine
+from models.user import Users
+from routesrs.models import User    # Pydantic
+from sqlalchemy.orm import Session
+
 
 router = APIRouter()
 
@@ -19,6 +24,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.post("/register")
-async def register():
-    """Логика регистрации"""
-    pass
+async def register(user: User):
+    with Session(engine) as session:
+        human = Users(name="Kirill", password="1234kir")
+        session.add(human)
+        session.commit()
+
