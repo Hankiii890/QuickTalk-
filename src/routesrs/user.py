@@ -34,7 +34,7 @@ def verify_token(token: str, credentials_exceptions):
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        username: str =  payload.get("sub")
+        username: str = payload.get("sub")
         if username is None:
             raise credentials_exceptions
         token_data = TokenData(username=username)
@@ -43,12 +43,12 @@ def verify_token(token: str, credentials_exceptions):
     return token_data
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exeption = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"}
-    )
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    token_data = verify_token(token)
+    user = db.query(Users).filter(Users.name == token_data.username).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
 
 
 @router.post("/register")
@@ -58,9 +58,10 @@ async def register_user(user: UserCreated, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
 
+    hashed_password = pwd_context.hash(user.password)
+
     # Create new user
-    with Session(engine) as session:
-        new_user = Users(name=user.username, email=user.email, password=user.password)
-        session.add(new_user)
-        session.commit()
-        return {"Message": "Пользователь успешно зарегистрирован!"}
+    new_user = Users(name=user.username, email=user.email, password=user.password)
+    db.add(new_user)
+    db.commit()
+    return {"Message": "Пользователь успешно зарегистрирован!"}
