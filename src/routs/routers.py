@@ -1,13 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from routesrs.models import UserCreated, Token, TokenData
-from database import get_db, engine
-from models.user import Users
+from routs.models import UserCreated, TokenData
+from database import get_db
+from models.us_me import Users
 
 router = APIRouter()
 
@@ -16,7 +15,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")   # Проце
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None=None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     """Создание токена"""
     to_encode = data.copy()    # Копия входящего словаря, чтобы избежать его изменения
     if expires_delta:
@@ -28,7 +27,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None=None):
     return encoded_jwt
 
 
-def verify_token(token: str, credentials_exceptions):
+def verify_token(token: str, credentials_exceptions: HTTPException):
     """Функция для проверки и декодирования токена,
     чтобы убедиться, что он действителен и извлечь данные о юзере
     """
@@ -44,7 +43,8 @@ def verify_token(token: str, credentials_exceptions):
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    token_data = verify_token(token)
+    credentials_exeptions = HTTPException(status_code=401, detail="Could not validate credentials")
+    token_data = verify_token(token, credentials_exeptions)
     user = db.query(Users).filter(Users.name == token_data.username).first()
     if user is None:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
@@ -61,7 +61,7 @@ async def register_user(user: UserCreated, db: Session = Depends(get_db)):
     hashed_password = pwd_context.hash(user.password)
 
     # Create new user
-    new_user = Users(name=user.username, email=user.email, password=user.password)
+    new_user = Users(name=user.username, email=user.email, password=hashed_password)
     db.add(new_user)
     db.commit()
     return {"Message": "Пользователь успешно зарегистрирован!"}
