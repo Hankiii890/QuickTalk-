@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class UserCreated(BaseModel):
@@ -14,3 +15,21 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str
+
+
+class MessageCreated(BaseModel):
+    sender_id: int
+    receiver_id: int
+    context: str
+
+
+class MessageResponse(BaseModel):
+    id: int
+    sender_id: int
+    receiver_id: int
+    content: str
+    timestamp: datetime
+
+    class Config:
+        """Для модели SQlAlchemy"""
+        from_attributes = True

@@ -7,10 +7,13 @@ from sqlalchemy.orm import Session
 from routs.models import UserCreated, TokenData
 from database import get_db
 from models.us_me import Users
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 router = APIRouter()
 
-SECRET_KEY = "001789a17b33865b6c2be5f50f36d7c1a34bc6096bbc843cb97e960446310ab4"
+SECRET_KEY = os.getenv("SECRET_KEY")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")   # Процедуры хеширования и генерации пароля
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
