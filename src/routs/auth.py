@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
@@ -16,6 +19,8 @@ router = APIRouter()
 SECRET_KEY = os.getenv("SECRET_KEY")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")   # Процедуры хеширования и генерации пароля
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+template = Jinja2Templates(directory="templates")
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -52,6 +57,25 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
+
+
+@router.get("/")
+async def home(request: Request):
+    return template.TemplateResponse("index.html", {"request": request})
+
+
+@router.post("/login")
+async def login(reqeust: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(Users).filter(Users.name == username).first()
+    if not user or not pwd_context.verify(password, user.password):
+        raise HTTPException(status_code=401, detail="Неверные логин или пароль!")
+
+    # Создание токена
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+
+    # Возвращаем токен
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/register")
