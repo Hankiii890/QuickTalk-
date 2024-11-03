@@ -72,23 +72,29 @@ async def login(reqeust: Request, username: str = Form(...), password: str = For
 
     # Создание токена
     access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.name}, expires_delta=access_token_expires)
+
 
     # Возвращаем токен
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/register")
-async def register_user(user: UserCreated, db: Session = Depends(get_db)):
+async def register_user(
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
     # Проверка на существование юзера
-    existing_user = db.query(Users).filter(Users.name == user.username).first()
+    existing_user = db.query(Users).filter(Users.name == username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
 
-    hashed_password = pwd_context.hash(user.password)
+    hashed_password = pwd_context.hash(password)
 
-    # Create new user
-    new_user = Users(name=user.username, email=user.email, password=hashed_password)
+    # Создание нового пользователя
+    new_user = Users(name=username, email=email, password=hashed_password)
     db.add(new_user)
     db.commit()
     return {"Message": "Пользователь успешно зарегистрирован!"}
