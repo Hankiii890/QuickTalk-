@@ -26,5 +26,30 @@
         </form>
         <div id="messages"></div>
     </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.access_token) {
+                    localStorage.setItem('token', data.access_token);
+                    window.location.href = '/chat.html';
+                } else {
+                    // Обработка ошибки входа
+                    console.error('Login failed:', data.detail);
+                    // Можно добавить отображение ошибки на странице
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+            }
+        });
+    </script>
+
 </body>
 </html>
