@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
@@ -62,6 +63,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 @router.get("/")
 async def home(request: Request):
     return template.TemplateResponse("index.html", {"request": request})
+
+
+@router.get("/chat", response_class=HTMLResponse)
+async def chat(request: Request):
+    return template.TemplateResponse("chat.html", {"request": request})
 
 
 @router.post("/login")
