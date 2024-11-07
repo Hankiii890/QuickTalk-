@@ -1,6 +1,8 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from fastapi.staticfiles import StaticFiles
-from websocket_manager import manager
+from fastapi.responses import HTMLResponse
+from src.websockets import websocket_manager as manager
+
+
 
 routs = APIRouter()
 
