@@ -104,3 +104,9 @@ async def register_user(
     db.add(new_user)
     db.commit()
     return {"Message": "Пользователь успешно зарегистрирован!"}
+
+
+@router.get("/users")
+async def get_user(current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(Users).filter(Users.id != current_user.id).all()
+    return user
