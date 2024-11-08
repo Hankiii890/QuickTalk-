@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
