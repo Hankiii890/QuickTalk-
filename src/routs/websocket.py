@@ -11,7 +11,7 @@ routs = APIRouter()
 
 
 @routs.websocket("/ws/{user_id}")
-async def websockets_endpoints(websocket: WebSocket, user_id: id, db: Session = Depends(get_db)):
+async def websockets_endpoints(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
     await manager.connect(user_id, websocket)
     try:
         while True:
