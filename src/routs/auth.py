@@ -68,8 +68,8 @@ async def chat(request: Request):
     return template.TemplateResponse("chat.html", {"request": request})
 
 
-@router.post("/login")
-async def login(reqeust: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+@router.post("/token")
+async def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(Users).filter(Users.name == username).first()
     if not user or not pwd_context.verify(password, user.password):
         raise HTTPException(status_code=401, detail="Неверные логин или пароль!")
@@ -81,6 +81,22 @@ async def login(reqeust: Request, username: str = Form(...), password: str = For
 
     # Возвращаем токен
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/login")
+async def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(Users).filter(Users.name == username).first()
+    if not user or not pwd_context.verify(password, user.password):
+        raise HTTPException(status_code=401, detail="Неверные логин или пароль!")
+
+    # Создание токена
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(data={"sub": user.name}, expires_delta=access_token_expires)
+
+
+    # Возвращаем токен
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 
 @router.post("/register")
