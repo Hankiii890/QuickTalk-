@@ -6,9 +6,9 @@ from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from routs.models import UserCreated, TokenData
+from .models import UserCreated, TokenData
 from database import get_db
-from models.us_me import Users
+from model_db.us_me import Users
 from dotenv import load_dotenv
 import os
 
@@ -98,7 +98,6 @@ async def login(username: str = Form(...), password: str = Form(...), db: Sessio
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-
 @router.post("/register")
 async def register_user(
     username: str = Form(...),
@@ -122,5 +121,12 @@ async def register_user(
 
 @router.get("/users")
 async def get_user(current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Проверка на существование пользователя
+    if current_user is None:
+        # Если текущий пользователь не найден, возвращаем всех юзеров
+        return db.query(Users).all()
+
+    # Если текущий существует, то возвращаем всех кроме него
     user = db.query(Users).filter(Users.id != current_user.id).all()
     return user
+
