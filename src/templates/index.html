@@ -39,7 +39,7 @@
                 const data = await response.json();
                 if (data.access_token) {
                     localStorage.setItem('token', data.access_token);
-                    window.location.href = '/chat.html';
+                    window.location.href = '/chat';
                 } else {
                     // Обработка ошибки входа
                     console.error('Login failed:', data.detail);
