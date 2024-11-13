@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from models.us_me import Messages
+from model_db.us_me import Messages
 from database import get_db
 from routs.models import MessageCreated, MessageResponse
 import datetime
