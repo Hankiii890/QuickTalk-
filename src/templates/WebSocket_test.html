@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <button id="connect">Connect</button>
+    <div id="messages"></div>
+
+    <script>
+        let socket;
+
+        document.getElementById('connect').onclick = function() {
+            const userId = prompt("Enter your user ID:");
+            socket = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+
+            socket.onopen = function() {
+                console.log('Connected to WebSocket');
+            };
+
+            socket.onmessage = function(event) {
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML += `<p>${event.data}</p>`;
+            };
+
+            socket.onclose = function() {
+                console.log('Disconnected from WebSocket');
+            };
+        };
+    </script>
+</body>
+</html>
