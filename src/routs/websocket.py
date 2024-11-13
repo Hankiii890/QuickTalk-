@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from .websocket_manager import manager
 from sqlalchemy.orm import Session
 from database import get_db
-from models.us_me import Messages
+from model_db.us_me import Messages
 import json
 from datetime import datetime
 
@@ -12,11 +12,13 @@ routs = APIRouter()
 
 @routs.websocket("/ws/{user_id}")
 async def websockets_endpoints(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
+    print(f'Connect is {user_id}')
     await manager.connect(user_id, websocket)
     try:
         while True:
             data = await websocket.receive_text()
             message_data = json.loads(data)
+
 
             # Создаем новое сообщение в БД
             new_message = Messages(
@@ -48,7 +50,7 @@ async def websockets_endpoints(websocket: WebSocket, user_id: int, db: Session =
         await manager.broadcast(f'User {user_id} left the chat')
 
 
-@routs.get('/online_users')
-async def onl_us():
-    return {f'Online_users': list[manager.active_connections.keys()]}
-
+@routs.get("/active_connection")
+async def online_user():
+    active_users = list(manager.active_connections.keys())  # Получаем список активных user_id
+    return {"Active users": active_users, "Count": len(active_users)}  # Возвращаем список и количество активных пользователей
