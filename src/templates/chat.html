@@ -96,7 +96,7 @@
         const usersList = document.getElementById('users-list');
         usersList.innerHTML = '';
         users.forEach(user => {
-            if (user.id !== currentUser  Id) {
+            if (user.id !== currentUser Id) {
                 const userElement = document.createElement('div');
                 userElement.className = 'user-item';
                 userElement.textContent = user.name;
@@ -108,7 +108,7 @@
 
     // Выбор пользователя для чата
     function selectUser (user_id, username) {
-        selectedUser  Id = user_id;
+        selectedUser Id = user_id;
         document.getElementById('selected-user').textContent = username;
         loadChatHistory(user_id);
     }
@@ -138,15 +138,15 @@
     // Отправка сообщения
     function sendMessage() {
         const messageText = document.getElementById('message-text').value;
-        if (messageText && selectedUser  Id) {
+        if (messageText && selectedUserId) {
             const message = {
-                receiver_id: selectedUser  Id,
+                receiver_id: selectedUser Id,
                 content: messageText
             };
             ws.send(JSON.stringify(message));
             document.getElementById('message-text').value = '';
             displayMessage({
-                sender_id: currentUser  Id,
+                sender_id: currentUser Id,
                 content: messageText,
                 timestamp: new Date().toISOString()
             });
@@ -157,7 +157,7 @@
     function displayMessage(message) {
         const chatMessages = document.getElementById('chat-messages');
         const messageElement = document.createElement('div');
-        messageElement.className = `message ${message.sender_id === currentUser  Id ? 'sent' : 'received'}`;
+        messageElement.className = `message ${message.sender_id === currentUserId ? 'sent' : 'received'}`;
         messageElement.textContent = message.content;
         chatMessages.appendChild(messageElement);
         chatMessages.scrollTop = chatMessages.scrollHeight;
