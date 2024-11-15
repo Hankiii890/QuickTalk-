@@ -52,4 +52,3 @@ async def websockets_endpoints(websocket: WebSocket, user_id: int, db: Session =
 async def online_user():
     active_users = list(manager.active_connections.keys())  # Получаем список активных user_id
     return {"Active users": active_users, "Count": len(active_users)}  # Возвращаем список и количество активных пользователей
-
