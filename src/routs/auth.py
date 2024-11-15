@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from .models import UserCreated, TokenData
 from database import get_db
 from model_db.us_me import Users
+from .websocket_manager import manager
 from dotenv import load_dotenv
 import os
 
@@ -64,8 +65,9 @@ async def home(request: Request):
 
 
 @router.get("/chat", response_class=HTMLResponse)
-async def chat(request: Request):
-    return template.TemplateResponse("chat.html", {"request": request})
+async def chat(request: Request, db: Session = Depends(get_db)):
+    active_users = list(manager.active_connections.keys())  # Получаем список активных пользователей по user_id
+    return template.TemplateResponse("chat.html", {"request": request, "active_users": active_users})
 
 
 @router.post("/token")
