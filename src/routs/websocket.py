@@ -12,13 +12,11 @@ routs = APIRouter()
 
 @routs.websocket("/ws/{user_id}")
 async def websockets_endpoints(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
-    print(f'Connect is {user_id}')
     await manager.connect(user_id, websocket)
     try:
         while True:
             data = await websocket.receive_text()
             message_data = json.loads(data)
-
 
             # Создаем новое сообщение в БД
             new_message = Messages(
@@ -32,18 +30,18 @@ async def websockets_endpoints(websocket: WebSocket, user_id: int, db: Session =
             db.refresh(new_message)
 
             # Отправка сообщений юзерам, которые онлайн
-            if manager.active_connections.get(message_data['receiver_id']):
+            if message_data['receiver_id'] in manager.active_connections:
                 await manager.send_personal_message(json.dumps({
                     'sender_id': user_id,
                     'content': message_data['content'],
                     'timestamp': new_message.timestamp.isoformat()
-                })), message_data['receiver_id']
+                }), message_data['receiver_id'])
 
             # Подтверждение отправки
             await manager.send_personal_message(json.dumps({
                 'status': 'sent',
                 'message': new_message.id,
-            }))
+            }), user_id)
 
     except WebSocketDisconnect:
         manager.disconnect(user_id)
@@ -54,3 +52,4 @@ async def websockets_endpoints(websocket: WebSocket, user_id: int, db: Session =
 async def online_user():
     active_users = list(manager.active_connections.keys())  # Получаем список активных user_id
     return {"Active users": active_users, "Count": len(active_users)}  # Возвращаем список и количество активных пользователей
+
