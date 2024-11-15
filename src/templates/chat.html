@@ -1,162 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - Message Service</title>
-    <link rel="stylesheet" href="static/styles.css">
+    <title>Чат</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        /* Простейшие стили для визуализации */
+        #chat-box {
+            border: 1px solid #ccc;
+            height: 400px;
+            overflow-y: scroll;
+            padding: 10px;
+        }
+        #message-input {
+            width: 100%;
+        }
+        .user-item {
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="sidebar">
-            <h2>Users</h2>
-            <div id="users-list"></div>
-        </div>
-        <div class="main-chat">
-            <div id="chat-header">
-                <h2>Chat with <span id="selected-user">No user selected</span></h2>
-            </div>
-            <div id="chat-messages"></div>
-            <div class="message-input">
-                <input type="text" id="message-text" placeholder="Type your message...">
-                <button onclick="sendMessage()">Send</button>
-            </div>
-        </div>
+    <h1>Чат</h1>
+
+    <h2>Активные пользователи:</h2>
+    <ul id="active-users">
+        {% for user_id in active_users %}
+            <li class="user-item" onclick="selectUser ({{ user_id }})">User  ID: {{ user_id }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2 id="chat-header">Выберите пользователя для начала чата</h2>
+
+    <div id="chat-box">
+        <!-- Здесь будут отображаться сообщения -->
     </div>
 
+    <input type="text" id="message-input" placeholder="Введите сообщение...">
+    <button id="send-button">Отправить</button>
+
     <script>
-    let ws;
-    let currentUser Id;
-    let selectedUser Id;
+    let socket;
+    let selectedUserId;
 
-    // Инициализация при загрузке страницы
-    window.onload = function() {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/'; // Перенаправление на страницу входа, если токен отсутствует
-            return;
-        }
-        initializeChat();
+    // Работа с вебсокетами
+    function selectUser(userId) {
+        selectedUserId = userId;
+        $('#chat-header').text(`Чат с User ID: ${userId}`);
+
     }
 
-    // Инициализация чата
-    async function initializeChat() {
-        const token = localStorage.getItem('token');
-        try {
-            const response = await fetch('/users/me', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            const user = await response.json();
-            currentUser Id = user.id; // Получаем текущего пользователя
-            initializeWebSocket(currentUser Id);
-            loadUsers();
-        } catch (error) {
-            console.error('Error initializing chat:', error);
-        }
-    }
+    function initWebSocket() {
+        const userId = '{{ user_id }}';
+        socket = new WebSocket(`ws://${window.location.host}/ws/${userId}`);
 
-    // Инициализация WebSocket
-    function initializeWebSocket(user_id) {
-        ws = new WebSocket(`ws://localhost:8000/ws/${user_id}`);
-
-        ws.onmessage = function(event) {
+        socket.onmessage = function(event) {
             const message = JSON.parse(event.data);
-            displayMessage(message);
-        };
-
-        ws.onclose = function() {
-            console.log('WebSocket connection closed');
-            setTimeout(() => initializeWebSocket(user_id), 1000);
+            $('#chat-box').append(`<div>${message.sender_id}: ${message.content}</div>`);
         };
     }
 
-    // Загрузка списка пользователей
-    async function loadUsers() {
-        try {
-            const response = await fetch('/active_connection'); // Изменено на правильный маршрут
-            if (!response.ok) {
-                throw new Error('Ошибка при загрузке пользователей');
-            }
-            const data = await response.json();
-            displayUsers(data['Active users']);
-        } catch (error) {
-            console.error('Error loading users:', error);
+    $('#send-button').click(function() {
+        const messageContent = $('#message-input').val();
+        if (messageContent && selectedUserId) {
+            socket.send(JSON.stringify({ receiver_id: selectedUserId, content: messageContent }));
+            $('#message-input').val(''); // Очистить поле ввода
+        } else {
+            alert('Пожалуйста, выберите пользователя и введите сообщение.');
         }
-    }
+    });
 
-    // Отображение списка пользователей
-    function displayUsers(users) {
-        const usersList = document.getElementById('users-list');
-        usersList.innerHTML = '';
-        users.forEach(user => {
-            if (user !== currentUser Id) { // Убедитесь, что текущий пользователь не отображается в списке
-                const userElement = document.createElement('div');
-                userElement.className = 'user-item';
-                userElement.textContent = `User  ID: ${user}`; // Отображение ID пользователя
-                userElement.onclick = () => selectUser (user, `User  ID: ${user}`);
-                usersList.appendChild(userElement);
-            }
-        });
-    }
-
-    // Выбор пользователя для чата
-    function selectUser (user_id, username) {
-        selectedUser Id = user_id;
-        document.getElementById('selected-user').textContent = username;
-        loadChatHistory(user_id);
-    }
-
-    // Загрузка истории чата
-    async function loadChatHistory(user_id) {
-        try {
-            const response = await fetch(`/message/${user_id}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            const messages = await response.json();
-            displayChatHistory(messages);
-        } catch (error) {
-            console.error('Error loading chat history:', error);
-        }
-    }
-
-    // Отображение истории чата
-    function displayChatHistory(messages) {
-        const chatMessages = document.getElementById('chat-messages');
-        chatMessages.innerHTML = '';
-        messages.forEach(displayMessage);
-    }
-
-    // Отправка сообщения
-    function sendMessage() {
-        const messageText = document.getElementById('message-text'). value;
-        if (messageText && selectedUser Id) {
-            const message = {
-                receiver_id: selectedUser Id,
-                content: messageText
-            };
-            ws.send(JSON.stringify(message));
-            document.getElementById('message-text').value = '';
-            displayMessage({
-                sender_id: currentUser Id,
-                content: messageText,
-                timestamp: new Date().toISOString()
-            });
-        }
-    }
-
-    // Отображение сообщения
-    function displayMessage(message) {
-        const chatMessages = document.getElementById('chat-messages');
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${message.sender_id === currentUser Id ? 'sent' : 'received'}`;
-        messageElement.textContent = message.content;
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    </script>
+    $(document).ready(function() {
+        initWebSocket();
+    });
+</script>
 </body>
 </html>
